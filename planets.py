@@ -511,13 +511,16 @@ class Main:
                         f.write(p.nearestToNowEphemeride.line + "\n\n")
             f.close()
 
-debugging = False
-if '--debug' in sys.argv:
-    debugging = True
 
-# logger = logging.getLogger()
-logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-# Start the program
-main = Main()
-# pdb.set_trace()
+if __name__ == "__main__":
+    debugging = False
+    if '--debug' in sys.argv:
+        debugging = True
+
+    # logger = logging.getLogger()
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    # Start the program
+    main = Main()
+    # pdb.set_trace()
