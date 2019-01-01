@@ -280,19 +280,19 @@ class Ephemeride:
 
     def isValid(self):
         if self.sunAlt > Ephemeride.maxSunAlt:
-            self.discardReason = 'sunAltitude'
+            self.discardReason = 'nearSun'
             return False
         if self.alt < Ephemeride.minAlt:
-            self.discardReason = 'altitude'
+            self.discardReason = 'altLow'
             return False
         if self.moonDistance < Ephemeride.minMoonDistance:
-            self.discardReason = 'moonDistance'
+            self.discardReason = 'nearMoon'
             return False
         if self.dateUnix > Main.endObservationTimestamp:
-            self.discardReason = 'dateUnix'
+            self.discardReason = 'tooLate'
             return False
         if self.motion < Ephemeride.minMotion:
-            self.discardReason = 'motion'
+            self.discardReason = 'tooSlow'
             return False
 
         return True
