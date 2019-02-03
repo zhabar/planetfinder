@@ -28,6 +28,8 @@ class Planet:
     minMagnitude = 22
     #maxNotSeenDays
     maxNotSeenDays = 4
+    #The time in day units between the first and the last measurement of the object
+    minArc = 0.15
 
     def __init__(self, info):
         parts = info.split()
@@ -58,6 +60,10 @@ class Planet:
         if self.score < Planet.minScore:
             self.discard = True
             logging.warning('Planet ' + self.name + ' discarded. Reason: score too low (' + str(self.score) + ')')
+
+        if self.arc < Planet.minArc:
+            self.discard = True
+            logging.warning('Planet ' + self.name + ' discarded. Reason: arc too short (' + str(self.arc) + ')')
 
         if self.scatterednessUrl:
             self.scatteredness = self.getScatteredness()
@@ -416,6 +422,11 @@ class Main:
         if re.fullmatch(r'[+-]?[0-9]+\.?[0-9]*', minAlt):
             Ephemeride.minAlt = float(minAlt)
         print('Minimum altitude: ' + str(Ephemeride.minAlt))
+
+        minArc = input('Minimum arc (' + str(Planet.minArc) + ')? ')
+        if re.fullmatch(r'[+-]?[0-9]+\.?[0-9]*', minArc):
+            Planet.minArc = float(minArc)
+        print('Minimum arc: ' + str(Planet.minArc))
 
         maxScatteredness1 = input('Maximum scateredness in x coordinate (' + str(Planet.maxScatteredness[0]) + ')? ')
         if maxScatteredness1.isdigit():
