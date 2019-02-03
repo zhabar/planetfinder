@@ -29,7 +29,7 @@ class Planet:
     #maxNotSeenDays
     maxNotSeenDays = 4
     #The time in day units between the first and the last measurement of the object
-    minArc = 0.15
+    minArc = 0.1
 
     def __init__(self, info):
         parts = info.split()
@@ -46,12 +46,15 @@ class Planet:
         # Object not good for observing
         self.discard = False
         self.scatterednessUrl = False
+        self.q = None
 
     def analyzePlanet(self):
         # pdb.set_trace()
         print("\n" + str(datetime.datetime.utcnow()) + " Working on: " + self.name)
 
         self.getEphemerides()
+
+        self.obtainQ(self.getObservations())
 
         if self.haveWeObserved():
             self.discard = True
@@ -222,6 +225,13 @@ class Planet:
             return True
         return False
 
+    # get all observations of planet until now
+    def getObservations(self):
+        resp = requests.get(self.observationsUrl)
+        tree = html.fromstring(resp.content)
+        text = tree.xpath('//pre/text()')
+        return text
+
 
     # scatteredness of results
     def getScatteredness(self):
@@ -242,6 +252,23 @@ class Planet:
                 maxDec = int(point[1])
 
         return (maxRa - minRa, maxDec - minDec)
+
+
+    # get q orbital parameter from projectpluto.com (minimum distance from earth (1.00 == 1 Astronomical Unit))
+    def obtainQ(self, measurements):
+        url = "https://www.projectpluto.com/cgi-bin/fo/fo_serve.cgi"
+        measurements = ''.join(measurements).strip()
+        if measurements:
+            resp = requests.post(url, files={'TextArea': measurements, 'upfile': '', 'obj_name': '', 'year': 'now', 'n_steps': '20', 'stepsize': '1', 'mpc_code': 'L01', 'faint_limit': '99', 'ephem_type': '0', 'sigmas': '0', 'motion': '0', 'element_center': '-2', 'epoch': 'default', 'resids': '0', 'language': 'e'}, headers={"content-type":"multipart/form-data; boundary=----WebKitFormBoundarynfqW5mKSfJwps8Lj"})
+            tree = html.fromstring(resp.content)
+            if len(tree.xpath("//pre//b[starts-with(text(),'Orbital elements')]/../following-sibling::text()")) > 1:
+                text = tree.xpath("//pre//b[starts-with(text(),'Orbital elements')]/../following-sibling::text()")[1]
+                if re.search('q\s[0-9]+?\.[0-9]+', text):
+                    self.q = re.search('q\s([0-9]+?\.[0-9]+)', text).group(1)
+                    # print("q is: " + self.q)
+
+
+
 
 # planet1 = Planet()
 
@@ -413,10 +440,10 @@ class Main:
             Planet.minScore = int(minScore)
         print('Minimum score: ' + str(Planet.minScore))
 
-        minMagnitude = input('Minimum efective magnitude (' + str(Planet.minMagnitude) + ')? ')
+        minMagnitude = input('Maximum efective magnitude (' + str(Planet.minMagnitude) + ')? ')
         if re.fullmatch(r'[+-]?[0-9]+\.?[0-9]*', minMagnitude):
             Planet.minMagnitude = float(minMagnitude)
-        print('Minimum efective magnitude: ' + str(Planet.minMagnitude))
+        print('Maximum efective magnitude: ' + str(Planet.minMagnitude))
 
         minAlt = input('Minimum altitude (' + str(Ephemeride.minAlt) + ')? ')
         if re.fullmatch(r'[+-]?[0-9]+\.?[0-9]*', minAlt):
@@ -508,6 +535,8 @@ class Main:
                     fileLine = "* " + p.name + "         score=" + str(p.score) + ', obs=' + str(p.numObservations) + ', arc=' + str(p.arc) + ', notSeen=' + str(p.notSeenDays) + "days, obsExposure=" + str(p.maxAltitudeEphemeride.observationTime) + 'min'
                     if hasattr(p, 'scatteredness'):
                         fileLine += ', scatteredness=(' + str(p.scatteredness[0]) + ',' + str(p.scatteredness[1]) + ')'
+                    if p.q:
+                        fileLine += ', q=' + p.q
                     if hasattr(p, 'mapLink'):
                         fileLine += ', mapLink=' + p.mapLink
                     f.write(fileLine + "\n")
