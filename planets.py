@@ -3,6 +3,7 @@ import requests_cache
 from bs4 import BeautifulSoup
 import json
 from lxml import html
+import os
 import pdb
 import re
 import sys
@@ -497,7 +498,7 @@ class Main:
                 p.analyzePlanet()
                 self.planets.append(p)
                 if self.beeperOn:
-                    playsound('up.wav')
+                    playsound(os.path.abspath('up.wav'))
             else:
                 # print('Plane already known (' + p.name + ')')
                 pass
@@ -509,7 +510,7 @@ class Main:
                     del self.planets[i]
                     if not self.planets[i].discard:
                         print('\n' + str(datetime.datetime.utcnow()) + ' Planet ' + self.planets[i].name + ' was removed!')
-                        playsound('down.wav')
+                        playsound(os.path.abspath('down.wav'))
                 elif not self.planets[i].discard:
                     # Update the nearest to now ephemeride (so it can be put into file)
                     self.planets[i].nearestToNow()
